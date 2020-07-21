@@ -165,18 +165,20 @@ for pol in fiona.open(eaa_vector_address):
     allArrays=np.dstack((tc_ar,lc_ar,st,air,eaaAr,bldgSum,dem,bu,ndvi))
     allArrays=allArrays[0,:,:]
 
-    df=pd.DataFrame(allArrays,columns=['tc','lc','st','air','eaaAr','bldgSum','elevation','bu','ndvi'])
+    df1=pd.DataFrame(allArrays,columns=['tc','lc','st','air','eaaAr','bldgSum','elevation','bu','ndvi'])
+
+df1['num']=np.arange(len(df1))
     
 # filter nodata values
-df = df[(df['st']!=stNoData)&
-        (df['air']!=airNoData)&
-        (df['lc']!=lcNoData)&
-        (df['tc']!=tcNoData)&
-        (df['eaaAr']!=eaaNoData)&
-        (df['bldgSum']!=bldgNodata)&
-        (df['elevation']!=demNoData)&
-        (df['bu']!=buNoData)&
-        (df['ndvi']!=ndviNoData)
+df = df1[(df1['st']!=stNoData)&
+        (df1['air']!=airNoData)&
+        (df1['lc']!=lcNoData)&
+        (df1['tc']!=tcNoData)&
+        (df1['eaaAr']!=eaaNoData)&
+        (df1['bldgSum']!=bldgNodata)&
+        (df1['elevation']!=demNoData)&
+        (df1['bu']!=buNoData)&
+        (df1['ndvi']!=ndviNoData)
        ]
 
 # convert the values to the correct units
@@ -212,10 +214,11 @@ predict_st_tc0 = results_st_model.get_prediction(indepVar_st_model_tc0)
 predict_st_tc0 = predict_st_tc0.summary_frame(alpha=0.05)
 #create a col that shows the estiamted st when tc is 0
 df['estimated_st_tc0'] = predict_st_tc0['mean']
-df['cooling_st'] = df['estimated_st_tc0']-df['estimated_st']
 
-print(df['cooling_st'].describe())
-plt.hist(df['cooling_st'])
+#df['cooling_st'] = df['estimated_st_tc0']-df['estimated_st']
+
+#print(df['cooling_st'].describe())
+#plt.hist(df['cooling_st'])
 
 #US MODEL
 features_airModel_us = ['st','Ycoor']
@@ -256,5 +259,19 @@ sns.distplot(df[df.cooling<0]['lc'])
 
 # sns.set_style("whitegrid")
 # plt.scatter(df['cooling_st'].sample(1000),df['st'].sample(1000),alpha=0.3)
-for col in dfUS.columns: 
-    print(col) 
+
+dfinal = df1.merge(df, on="num", how = 'outer')
+
+ar_test = np.array(dfinal.estimated_air)
+plt.imshow(ar_test.reshape(kwds['height'],kwds['width']))
+
+for col in dfinal.columns:
+    print(col)
+
+sns.set_style("whitegrid")
+plt.scatter(dfUS['TempMax'],dfUS['st'],alpha=0.3)
+m, b = np.polyfit(dfUS['TempMax'],dfUS['st'], 1)
+plt.plot(dfUS['TempMax'], m*dfUS['TempMax'] + b,color="black")
+
+
+
